@@ -1,0 +1,34 @@
+# Everything here stays out of the build context: smaller, faster builds, and
+# no local secrets or build output can end up inside an image.
+
+# Dependencies and build output are recreated inside the image.
+**/node_modules
+**/dist
+**/.tanstack
+**/*.tsbuildinfo
+**/coverage
+
+# Secrets. `.env.example` is harmless documentation, so it may go in.
+**/.env
+**/.env.*
+!**/.env.example
+**/*.local
+**/*.pem
+**/*.key
+**/*.crt
+
+# Local data, logs, tooling.
+.git
+.data
+**/*.log
+**/.DS_Store
+**/.vscode
+**/.idea
+**/.claude
+
+# The Docker files themselves are not needed inside the image.
+Dockerfile
+.dockerignore
+compose.yaml
+compose.override.yml
+docker-compose.override.yml

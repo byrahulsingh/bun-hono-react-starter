@@ -1,0 +1,21 @@
+{
+  "name": "web-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --filter '*' dev",
+    "build": "bun --filter '*' build",
+    "typecheck": "bun --filter '*' typecheck",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose stop postgres",
+    "db:generate": "bun run --filter @repo/api db:generate",
+    "db:migrate": "bun run --filter @repo/api db:migrate",
+    "db:studio": "bun run --filter @repo/api db:studio",
+    "docker:build": "docker build -t app:local .",
+    "docker:up": "docker compose --profile app up --build",
+    "docker:down": "docker compose --profile app down"
+  }
+}

@@ -1,0 +1,61 @@
+# Local development.
+#
+#   bun run db:up        Postgres only; run the api and client on your machine with `bun run dev`
+#   bun run docker:up    the production image too (migrate, then app on :4000) — to check it before shipping
+#
+# Not a production deployment: the credentials below are for your laptop only.
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
+  APP_URL: http://localhost:4000
+  LOG_LEVEL: info
+
+x-app-image: &app-image
+  build: .
+  image: app:local
+
+services:
+  postgres:
+    # Keep this at the oldest major version you support, so nothing slips in
+    # that a customer's managed Postgres does not have.
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      # Override when 5432 is taken by a Postgres already on your machine.
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d app']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # One-off: applies migrations, then exits. The app waits for it to succeed,
+  # the same order a production rollout uses.
+  migrate:
+    <<: *app-image
+    profiles: [app]
+    working_dir: /app/apps/api
+    command: ['bun', 'src/db/migrate.ts']
+    environment: *app-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    <<: *app-image
+    profiles: [app]
+    environment: *app-env
+    ports:
+      - '4000:4000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres-data:

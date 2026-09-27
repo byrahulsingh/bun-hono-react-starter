@@ -1,0 +1,92 @@
+# ─── Dependencies ────────────────────────────────────────────────
+node_modules/
+
+# ─── Build output and tool caches ────────────────────────────────
+dist/
+dist-ssr/
+build/
+.output/
+.astro/
+.turbo/
+.cache/
+coverage/
+*.tsbuildinfo
+.eslintcache
+
+# ─── Environment and secrets ─────────────────────────────────────
+# Real values never go in git. Only the documented templates do.
+.env
+.env.*
+*.local
+!.env.example
+!**/.env.example
+
+# Private keys and certificates (TLS, TURN, license signing, etc.)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*.jks
+
+# ─── Deployment and local infrastructure ─────────────────────────
+# Personal overrides of the shared compose file.
+docker-compose.override.yml
+compose.override.yml
+# Bind-mounted local data (Postgres, Redis, recordings, uploads) goes in .data/.
+# Deliberately not `data/` or `recordings/`: those would also hide source
+# folders with the same name, e.g. a src/routes/recordings/ page.
+.data/
+# Database dumps. Not *.sql: Drizzle migrations in apps/api/drizzle ARE committed.
+/backups/
+*.dump
+*.sql.gz
+# Terraform state and variables hold real infrastructure secrets.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+# Helm / Kubernetes values with real secrets. Commit a *.example.yaml instead.
+*.secret.yaml
+*.secrets.yaml
+
+# ─── Logs ────────────────────────────────────────────────────────
+/logs/
+*.log
+npm-debug.log*
+bun-debug.log*
+
+# ─── Editors ─────────────────────────────────────────────────────
+.idea/
+*.swp
+*.swo
+*~
+# Personal VS Code settings stay local; shared project settings are committed.
+**/.vscode/*
+!**/.vscode/settings.json
+!**/.vscode/extensions.json
+
+# Local-only AI assistant settings.
+.claude/settings.local.json
+
+# ─── Operating systems ───────────────────────────────────────────
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.TemporaryItems
+.DocumentRevisions-V100
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+# Linux
+.directory
+.Trash-*
+.nfs*
