@@ -17,7 +17,7 @@ import pino from 'pino';
 
 import { env, isProd } from '#/libs/env';
 
-const SUBSYSTEMS = ['server', 'http', 'db', 'auth'] as const;
+const SUBSYSTEMS = ['server', 'http', 'db', 'auth', 'worker', 'email'] as const;
 
 export type Subsystem = (typeof SUBSYSTEMS)[number];
 
@@ -38,8 +38,8 @@ export const rootLogger = pino({
   level: env.LOG_LEVEL ?? (isProd ? 'info' : 'debug'),
   // JSON in production so log aggregators can parse it; pretty in dev.
   transport: isProd ? undefined : devTransport,
-  // API keys, tokens and passwords must never reach a log line, even when a
-  // whole config object is logged by mistake.
+  // Clients bring their own provider keys, and those must never reach a log
+  // line, even when a whole config object is logged by mistake.
   redact: {
     paths: [
       'password',

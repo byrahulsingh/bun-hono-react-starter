@@ -1,0 +1,52 @@
+# Dex: a real OpenID Connect provider, for trying single sign-on locally and
+# for the browser tests (apps/e2e). Local only: the users, passwords and
+# client secret below are public test values.
+#
+#   Settings → Single sign-on → Add connection
+#     Issuer URL     http://localhost:5556/dex
+#     Client ID      app-local
+#     Client secret  app-local-secret
+#     Domains        sso.test
+#
+# Users (password for all: sso password 123):
+#   ada@sso.test   ben@sso.test   cy@sso.test   eve@other.test (outside the domain)
+
+issuer: http://localhost:5556/dex
+
+storage:
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  # Straight back to the app after signing in, no "allow access?" page.
+  skipApprovalScreen: true
+
+staticClients:
+  - id: app-local
+    name: App (local)
+    secret: app-local-secret
+    redirectURIs:
+      - http://localhost:3000/sso/callback # bun run dev
+      - http://localhost:3100/sso/callback # browser tests
+      - http://localhost:4000/sso/callback # bun run docker:up
+
+enablePasswordDB: true
+staticPasswords:
+  - email: ada@sso.test
+    username: ada
+    userID: 7d1f1a52-0b1e-4c1e-9a51-000000000001
+    hash: $2a$10$XY2yWfkdS.REikniVMC8VONdYJhkl1dZNQRWTG09p0VlIQNfycw2W
+  - email: ben@sso.test
+    username: ben
+    userID: 7d1f1a52-0b1e-4c1e-9a51-000000000002
+    hash: $2a$10$XY2yWfkdS.REikniVMC8VONdYJhkl1dZNQRWTG09p0VlIQNfycw2W
+  - email: cy@sso.test
+    username: cy
+    userID: 7d1f1a52-0b1e-4c1e-9a51-000000000003
+    hash: $2a$10$XY2yWfkdS.REikniVMC8VONdYJhkl1dZNQRWTG09p0VlIQNfycw2W
+  - email: eve@other.test
+    username: eve
+    userID: 7d1f1a52-0b1e-4c1e-9a51-000000000004
+    hash: $2a$10$XY2yWfkdS.REikniVMC8VONdYJhkl1dZNQRWTG09p0VlIQNfycw2W

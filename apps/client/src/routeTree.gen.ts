@@ -9,50 +9,574 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AuthRouteImport } from './routes/_auth'
+import { Route as InviteRouteImport } from './routes/invite'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as AuthConfirmEmailRouteImport } from './routes/_auth/confirm-email'
+import { Route as AuthForgotPasswordRouteImport } from './routes/_auth/forgot-password'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
+import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-password'
+import { Route as AuthSetupRouteImport } from './routes/_auth/setup'
+import { Route as AuthSignInAlertRouteImport } from './routes/_auth/sign-in-alert'
+import { Route as AuthSsoRouteImport } from './routes/_auth/sso'
+import { Route as AppTTenantIdRouteImport } from './routes/_app/t/$tenantId'
+import { Route as AuthSsoCallbackRouteImport } from './routes/_auth/sso_.callback'
+import { Route as AppTTenantIdIndexRouteImport } from './routes/_app/t/$tenantId/index'
+import { Route as AppTTenantIdAccountRouteImport } from './routes/_app/t/$tenantId/account'
+import { Route as AppTTenantIdPeopleRouteImport } from './routes/_app/t/$tenantId/people'
+import { Route as AppTTenantIdProjectsRouteImport } from './routes/_app/t/$tenantId/projects'
+import { Route as AppTTenantIdOrgAdminsRouteImport } from './routes/_app/t/$tenantId/org/admins'
+import { Route as AppTTenantIdOrgAuditRouteImport } from './routes/_app/t/$tenantId/org/audit'
+import { Route as AppTTenantIdOrgPeopleRouteImport } from './routes/_app/t/$tenantId/org/people'
+import { Route as AppTTenantIdOrgSettingsRouteImport } from './routes/_app/t/$tenantId/org/settings'
+import { Route as AppTTenantIdOrgTenantsRouteImport } from './routes/_app/t/$tenantId/org/tenants'
+import { Route as AppTTenantIdOrgRolesIndexRouteImport } from './routes/_app/t/$tenantId/org/roles/index'
+import { Route as AppTTenantIdOrgRolesRoleIdRouteImport } from './routes/_app/t/$tenantId/org/roles/$roleId'
+import { Route as AppTTenantIdOrgRolesNewRouteImport } from './routes/_app/t/$tenantId/org/roles/new'
 
-const IndexRoute = IndexRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteRoute = InviteRouteImport.update({
+  id: '/invite',
+  path: '/invite',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
+} as any)
+const AuthConfirmEmailRoute = AuthConfirmEmailRouteImport.update({
+  id: '/confirm-email',
+  path: '/confirm-email',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSetupRoute = AuthSetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignInAlertRoute = AuthSignInAlertRouteImport.update({
+  id: '/sign-in-alert',
+  path: '/sign-in-alert',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSsoRoute = AuthSsoRouteImport.update({
+  id: '/sso',
+  path: '/sso',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AppTTenantIdRoute = AppTTenantIdRouteImport.update({
+  id: '/t/$tenantId',
+  path: '/t/$tenantId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AuthSsoCallbackRoute = AuthSsoCallbackRouteImport.update({
+  id: '/sso_/callback',
+  path: '/sso/callback',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AppTTenantIdIndexRoute = AppTTenantIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdAccountRoute = AppTTenantIdAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdPeopleRoute = AppTTenantIdPeopleRouteImport.update({
+  id: '/people',
+  path: '/people',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdProjectsRoute = AppTTenantIdProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgAdminsRoute = AppTTenantIdOrgAdminsRouteImport.update({
+  id: '/org/admins',
+  path: '/org/admins',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgAuditRoute = AppTTenantIdOrgAuditRouteImport.update({
+  id: '/org/audit',
+  path: '/org/audit',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgPeopleRoute = AppTTenantIdOrgPeopleRouteImport.update({
+  id: '/org/people',
+  path: '/org/people',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgSettingsRoute = AppTTenantIdOrgSettingsRouteImport.update({
+  id: '/org/settings',
+  path: '/org/settings',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgTenantsRoute = AppTTenantIdOrgTenantsRouteImport.update({
+  id: '/org/tenants',
+  path: '/org/tenants',
+  getParentRoute: () => AppTTenantIdRoute,
+} as any)
+const AppTTenantIdOrgRolesIndexRoute =
+  AppTTenantIdOrgRolesIndexRouteImport.update({
+    id: '/org/roles/',
+    path: '/org/roles/',
+    getParentRoute: () => AppTTenantIdRoute,
+  } as any)
+const AppTTenantIdOrgRolesRoleIdRoute =
+  AppTTenantIdOrgRolesRoleIdRouteImport.update({
+    id: '/org/roles/$roleId',
+    path: '/org/roles/$roleId',
+    getParentRoute: () => AppTTenantIdRoute,
+  } as any)
+const AppTTenantIdOrgRolesNewRoute = AppTTenantIdOrgRolesNewRouteImport.update({
+  id: '/org/roles/new',
+  path: '/org/roles/new',
+  getParentRoute: () => AppTTenantIdRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/invite': typeof InviteRoute
+  '/confirm-email': typeof AuthConfirmEmailRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
+  '/login': typeof AuthLoginRoute
+  '/reset-password': typeof AuthResetPasswordRoute
+  '/setup': typeof AuthSetupRoute
+  '/sign-in-alert': typeof AuthSignInAlertRoute
+  '/sso': typeof AuthSsoRoute
+  '/t/$tenantId': typeof AppTTenantIdRouteWithChildren
+  '/sso/callback': typeof AuthSsoCallbackRoute
+  '/t/$tenantId/account': typeof AppTTenantIdAccountRoute
+  '/t/$tenantId/people': typeof AppTTenantIdPeopleRoute
+  '/t/$tenantId/projects': typeof AppTTenantIdProjectsRoute
+  '/t/$tenantId/': typeof AppTTenantIdIndexRoute
+  '/t/$tenantId/org/admins': typeof AppTTenantIdOrgAdminsRoute
+  '/t/$tenantId/org/audit': typeof AppTTenantIdOrgAuditRoute
+  '/t/$tenantId/org/people': typeof AppTTenantIdOrgPeopleRoute
+  '/t/$tenantId/org/settings': typeof AppTTenantIdOrgSettingsRoute
+  '/t/$tenantId/org/tenants': typeof AppTTenantIdOrgTenantsRoute
+  '/t/$tenantId/org/roles/$roleId': typeof AppTTenantIdOrgRolesRoleIdRoute
+  '/t/$tenantId/org/roles/new': typeof AppTTenantIdOrgRolesNewRoute
+  '/t/$tenantId/org/roles/': typeof AppTTenantIdOrgRolesIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/invite': typeof InviteRoute
+  '/confirm-email': typeof AuthConfirmEmailRoute
+  '/forgot-password': typeof AuthForgotPasswordRoute
+  '/login': typeof AuthLoginRoute
+  '/reset-password': typeof AuthResetPasswordRoute
+  '/setup': typeof AuthSetupRoute
+  '/sign-in-alert': typeof AuthSignInAlertRoute
+  '/sso': typeof AuthSsoRoute
+  '/sso/callback': typeof AuthSsoCallbackRoute
+  '/t/$tenantId/account': typeof AppTTenantIdAccountRoute
+  '/t/$tenantId/people': typeof AppTTenantIdPeopleRoute
+  '/t/$tenantId/projects': typeof AppTTenantIdProjectsRoute
+  '/t/$tenantId': typeof AppTTenantIdIndexRoute
+  '/t/$tenantId/org/admins': typeof AppTTenantIdOrgAdminsRoute
+  '/t/$tenantId/org/audit': typeof AppTTenantIdOrgAuditRoute
+  '/t/$tenantId/org/people': typeof AppTTenantIdOrgPeopleRoute
+  '/t/$tenantId/org/settings': typeof AppTTenantIdOrgSettingsRoute
+  '/t/$tenantId/org/tenants': typeof AppTTenantIdOrgTenantsRoute
+  '/t/$tenantId/org/roles/$roleId': typeof AppTTenantIdOrgRolesRoleIdRoute
+  '/t/$tenantId/org/roles/new': typeof AppTTenantIdOrgRolesNewRoute
+  '/t/$tenantId/org/roles': typeof AppTTenantIdOrgRolesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/_auth': typeof AuthRouteWithChildren
+  '/invite': typeof InviteRoute
+  '/_auth/confirm-email': typeof AuthConfirmEmailRoute
+  '/_auth/forgot-password': typeof AuthForgotPasswordRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_auth/reset-password': typeof AuthResetPasswordRoute
+  '/_auth/setup': typeof AuthSetupRoute
+  '/_auth/sign-in-alert': typeof AuthSignInAlertRoute
+  '/_auth/sso': typeof AuthSsoRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/t/$tenantId': typeof AppTTenantIdRouteWithChildren
+  '/_auth/sso_/callback': typeof AuthSsoCallbackRoute
+  '/_app/t/$tenantId/account': typeof AppTTenantIdAccountRoute
+  '/_app/t/$tenantId/people': typeof AppTTenantIdPeopleRoute
+  '/_app/t/$tenantId/projects': typeof AppTTenantIdProjectsRoute
+  '/_app/t/$tenantId/': typeof AppTTenantIdIndexRoute
+  '/_app/t/$tenantId/org/admins': typeof AppTTenantIdOrgAdminsRoute
+  '/_app/t/$tenantId/org/audit': typeof AppTTenantIdOrgAuditRoute
+  '/_app/t/$tenantId/org/people': typeof AppTTenantIdOrgPeopleRoute
+  '/_app/t/$tenantId/org/settings': typeof AppTTenantIdOrgSettingsRoute
+  '/_app/t/$tenantId/org/tenants': typeof AppTTenantIdOrgTenantsRoute
+  '/_app/t/$tenantId/org/roles/$roleId': typeof AppTTenantIdOrgRolesRoleIdRoute
+  '/_app/t/$tenantId/org/roles/new': typeof AppTTenantIdOrgRolesNewRoute
+  '/_app/t/$tenantId/org/roles/': typeof AppTTenantIdOrgRolesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/invite'
+    | '/confirm-email'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/setup'
+    | '/sign-in-alert'
+    | '/sso'
+    | '/t/$tenantId'
+    | '/sso/callback'
+    | '/t/$tenantId/account'
+    | '/t/$tenantId/people'
+    | '/t/$tenantId/projects'
+    | '/t/$tenantId/'
+    | '/t/$tenantId/org/admins'
+    | '/t/$tenantId/org/audit'
+    | '/t/$tenantId/org/people'
+    | '/t/$tenantId/org/settings'
+    | '/t/$tenantId/org/tenants'
+    | '/t/$tenantId/org/roles/$roleId'
+    | '/t/$tenantId/org/roles/new'
+    | '/t/$tenantId/org/roles/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/invite'
+    | '/confirm-email'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/setup'
+    | '/sign-in-alert'
+    | '/sso'
+    | '/sso/callback'
+    | '/t/$tenantId/account'
+    | '/t/$tenantId/people'
+    | '/t/$tenantId/projects'
+    | '/t/$tenantId'
+    | '/t/$tenantId/org/admins'
+    | '/t/$tenantId/org/audit'
+    | '/t/$tenantId/org/people'
+    | '/t/$tenantId/org/settings'
+    | '/t/$tenantId/org/tenants'
+    | '/t/$tenantId/org/roles/$roleId'
+    | '/t/$tenantId/org/roles/new'
+    | '/t/$tenantId/org/roles'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/_auth'
+    | '/invite'
+    | '/_auth/confirm-email'
+    | '/_auth/forgot-password'
+    | '/_auth/login'
+    | '/_auth/reset-password'
+    | '/_auth/setup'
+    | '/_auth/sign-in-alert'
+    | '/_auth/sso'
+    | '/_app/'
+    | '/_app/t/$tenantId'
+    | '/_auth/sso_/callback'
+    | '/_app/t/$tenantId/account'
+    | '/_app/t/$tenantId/people'
+    | '/_app/t/$tenantId/projects'
+    | '/_app/t/$tenantId/'
+    | '/_app/t/$tenantId/org/admins'
+    | '/_app/t/$tenantId/org/audit'
+    | '/_app/t/$tenantId/org/people'
+    | '/_app/t/$tenantId/org/settings'
+    | '/_app/t/$tenantId/org/tenants'
+    | '/_app/t/$tenantId/org/roles/$roleId'
+    | '/_app/t/$tenantId/org/roles/new'
+    | '/_app/t/$tenantId/org/roles/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
+  InviteRoute: typeof InviteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite': {
+      id: '/invite'
+      path: '/invite'
+      fullPath: '/invite'
+      preLoaderRoute: typeof InviteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_auth/confirm-email': {
+      id: '/_auth/confirm-email'
+      path: '/confirm-email'
+      fullPath: '/confirm-email'
+      preLoaderRoute: typeof AuthConfirmEmailRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/forgot-password': {
+      id: '/_auth/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof AuthForgotPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/reset-password': {
+      id: '/_auth/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof AuthResetPasswordRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/setup': {
+      id: '/_auth/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof AuthSetupRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sign-in-alert': {
+      id: '/_auth/sign-in-alert'
+      path: '/sign-in-alert'
+      fullPath: '/sign-in-alert'
+      preLoaderRoute: typeof AuthSignInAlertRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sso': {
+      id: '/_auth/sso'
+      path: '/sso'
+      fullPath: '/sso'
+      preLoaderRoute: typeof AuthSsoRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_app/t/$tenantId': {
+      id: '/_app/t/$tenantId'
+      path: '/t/$tenantId'
+      fullPath: '/t/$tenantId'
+      preLoaderRoute: typeof AppTTenantIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_auth/sso_/callback': {
+      id: '/_auth/sso_/callback'
+      path: '/sso/callback'
+      fullPath: '/sso/callback'
+      preLoaderRoute: typeof AuthSsoCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_app/t/$tenantId/': {
+      id: '/_app/t/$tenantId/'
+      path: '/'
+      fullPath: '/t/$tenantId/'
+      preLoaderRoute: typeof AppTTenantIdIndexRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/account': {
+      id: '/_app/t/$tenantId/account'
+      path: '/account'
+      fullPath: '/t/$tenantId/account'
+      preLoaderRoute: typeof AppTTenantIdAccountRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/people': {
+      id: '/_app/t/$tenantId/people'
+      path: '/people'
+      fullPath: '/t/$tenantId/people'
+      preLoaderRoute: typeof AppTTenantIdPeopleRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/projects': {
+      id: '/_app/t/$tenantId/projects'
+      path: '/projects'
+      fullPath: '/t/$tenantId/projects'
+      preLoaderRoute: typeof AppTTenantIdProjectsRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/admins': {
+      id: '/_app/t/$tenantId/org/admins'
+      path: '/org/admins'
+      fullPath: '/t/$tenantId/org/admins'
+      preLoaderRoute: typeof AppTTenantIdOrgAdminsRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/audit': {
+      id: '/_app/t/$tenantId/org/audit'
+      path: '/org/audit'
+      fullPath: '/t/$tenantId/org/audit'
+      preLoaderRoute: typeof AppTTenantIdOrgAuditRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/people': {
+      id: '/_app/t/$tenantId/org/people'
+      path: '/org/people'
+      fullPath: '/t/$tenantId/org/people'
+      preLoaderRoute: typeof AppTTenantIdOrgPeopleRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/settings': {
+      id: '/_app/t/$tenantId/org/settings'
+      path: '/org/settings'
+      fullPath: '/t/$tenantId/org/settings'
+      preLoaderRoute: typeof AppTTenantIdOrgSettingsRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/tenants': {
+      id: '/_app/t/$tenantId/org/tenants'
+      path: '/org/tenants'
+      fullPath: '/t/$tenantId/org/tenants'
+      preLoaderRoute: typeof AppTTenantIdOrgTenantsRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/roles/': {
+      id: '/_app/t/$tenantId/org/roles/'
+      path: '/org/roles'
+      fullPath: '/t/$tenantId/org/roles/'
+      preLoaderRoute: typeof AppTTenantIdOrgRolesIndexRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/roles/$roleId': {
+      id: '/_app/t/$tenantId/org/roles/$roleId'
+      path: '/org/roles/$roleId'
+      fullPath: '/t/$tenantId/org/roles/$roleId'
+      preLoaderRoute: typeof AppTTenantIdOrgRolesRoleIdRouteImport
+      parentRoute: typeof AppTTenantIdRoute
+    }
+    '/_app/t/$tenantId/org/roles/new': {
+      id: '/_app/t/$tenantId/org/roles/new'
+      path: '/org/roles/new'
+      fullPath: '/t/$tenantId/org/roles/new'
+      preLoaderRoute: typeof AppTTenantIdOrgRolesNewRouteImport
+      parentRoute: typeof AppTTenantIdRoute
     }
   }
 }
 
+interface AppTTenantIdRouteChildren {
+  AppTTenantIdAccountRoute: typeof AppTTenantIdAccountRoute
+  AppTTenantIdPeopleRoute: typeof AppTTenantIdPeopleRoute
+  AppTTenantIdProjectsRoute: typeof AppTTenantIdProjectsRoute
+  AppTTenantIdIndexRoute: typeof AppTTenantIdIndexRoute
+  AppTTenantIdOrgAdminsRoute: typeof AppTTenantIdOrgAdminsRoute
+  AppTTenantIdOrgAuditRoute: typeof AppTTenantIdOrgAuditRoute
+  AppTTenantIdOrgPeopleRoute: typeof AppTTenantIdOrgPeopleRoute
+  AppTTenantIdOrgSettingsRoute: typeof AppTTenantIdOrgSettingsRoute
+  AppTTenantIdOrgTenantsRoute: typeof AppTTenantIdOrgTenantsRoute
+  AppTTenantIdOrgRolesRoleIdRoute: typeof AppTTenantIdOrgRolesRoleIdRoute
+  AppTTenantIdOrgRolesNewRoute: typeof AppTTenantIdOrgRolesNewRoute
+  AppTTenantIdOrgRolesIndexRoute: typeof AppTTenantIdOrgRolesIndexRoute
+}
+
+const AppTTenantIdRouteChildren: AppTTenantIdRouteChildren = {
+  AppTTenantIdAccountRoute: AppTTenantIdAccountRoute,
+  AppTTenantIdPeopleRoute: AppTTenantIdPeopleRoute,
+  AppTTenantIdProjectsRoute: AppTTenantIdProjectsRoute,
+  AppTTenantIdIndexRoute: AppTTenantIdIndexRoute,
+  AppTTenantIdOrgAdminsRoute: AppTTenantIdOrgAdminsRoute,
+  AppTTenantIdOrgAuditRoute: AppTTenantIdOrgAuditRoute,
+  AppTTenantIdOrgPeopleRoute: AppTTenantIdOrgPeopleRoute,
+  AppTTenantIdOrgSettingsRoute: AppTTenantIdOrgSettingsRoute,
+  AppTTenantIdOrgTenantsRoute: AppTTenantIdOrgTenantsRoute,
+  AppTTenantIdOrgRolesRoleIdRoute: AppTTenantIdOrgRolesRoleIdRoute,
+  AppTTenantIdOrgRolesNewRoute: AppTTenantIdOrgRolesNewRoute,
+  AppTTenantIdOrgRolesIndexRoute: AppTTenantIdOrgRolesIndexRoute,
+}
+
+const AppTTenantIdRouteWithChildren = AppTTenantIdRoute._addFileChildren(
+  AppTTenantIdRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppTTenantIdRoute: typeof AppTTenantIdRouteWithChildren
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppTTenantIdRoute: AppTTenantIdRouteWithChildren,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
+interface AuthRouteChildren {
+  AuthConfirmEmailRoute: typeof AuthConfirmEmailRoute
+  AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  AuthSetupRoute: typeof AuthSetupRoute
+  AuthSignInAlertRoute: typeof AuthSignInAlertRoute
+  AuthSsoRoute: typeof AuthSsoRoute
+  AuthSsoCallbackRoute: typeof AuthSsoCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthConfirmEmailRoute: AuthConfirmEmailRoute,
+  AuthForgotPasswordRoute: AuthForgotPasswordRoute,
+  AuthLoginRoute: AuthLoginRoute,
+  AuthResetPasswordRoute: AuthResetPasswordRoute,
+  AuthSetupRoute: AuthSetupRoute,
+  AuthSignInAlertRoute: AuthSignInAlertRoute,
+  AuthSsoRoute: AuthSsoRoute,
+  AuthSsoCallbackRoute: AuthSsoCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRouteWithChildren,
+  InviteRoute: InviteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

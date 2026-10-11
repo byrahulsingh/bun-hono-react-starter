@@ -1,12 +1,12 @@
 /**
  * Every error code the API can send, and the one error type routes throw.
  *
- *   throw new AppError('NOT_FOUND', 'Job not found');
+ *   throw new AppError('NOT_FOUND', 'Project not found');
  *   throw new AppError('CONFLICT', 'An account with this email already exists');
  *
  * `app.onError` turns it into the envelope:
  *
- *   { success: false, message: 'Job not found', error: { code: 'NOT_FOUND' } }
+ *   { success: false, message: 'Project not found', error: { code: 'NOT_FOUND' } }
  *
  * `message` is for people and may change wording at any time. `code` is for
  * the client to branch on, so it is stable: never rename or reuse one. The
@@ -38,11 +38,25 @@ export const ERROR_CODES = {
   PAYLOAD_TOO_LARGE: 413,
   RATE_LIMITED: 429,
   INTERNAL: 500,
-  /** A dependency is down (database, third-party API); retrying later may work. */
+  /** A dependency is down (database, AI provider); retrying later may work. */
   UNAVAILABLE: 503,
 
   // Feature codes go below this line, grouped by feature, when the feature is
-  // built — e.g. ORDER_ALREADY_PAID: 409, RESET_LINK_EXPIRED: 410.
+  // built — e.g. INVITE_EXPIRED: 410.
+
+  // ── Auth ──
+  /** Wrong email or password, or a disabled account: deliberately one code for all three. */
+  INVALID_CREDENTIALS: 401,
+  /** The session ended (signed out, expired, revoked). Sign in again. */
+  SESSION_EXPIRED: 401,
+  /** A refresh came without a valid proof from this device's key. */
+  INVALID_DEVICE_PROOF: 401,
+  /** An old refresh token was used again; the session was ended as a precaution. */
+  REFRESH_TOKEN_REUSED: 401,
+  /** A setup, reset or invitation link that is wrong, used or expired. */
+  LINK_INVALID: 410,
+  /** A password was used where the organization requires single sign-on: use "Sign in with SSO". */
+  SSO_REQUIRED: 403,
 } as const satisfies Record<string, ContentfulStatusCode>;
 
 export type ErrorCode = keyof typeof ERROR_CODES;

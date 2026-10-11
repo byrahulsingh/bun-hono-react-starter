@@ -7,8 +7,12 @@
  * index.html without injection, so every value falls back to the root.
  */
 
+import type { Branding } from '#/lib/api/settings'
+
 interface ClientConfig {
   basePath: string
+  /** The branding when the page was served (production only; see lib/branding.ts). */
+  branding?: Branding
 }
 
 declare global {
@@ -20,7 +24,7 @@ declare global {
 /** `''` at the root, `/app` under a subpath. */
 export const basePath = window.__APP_CONFIG__?.basePath ?? ''
 
-/** Prefix for every API call: `apiUrl('/orders')` -> `/app/api/orders`. */
+/** Prefix for every API call: `apiUrl('/projects')` -> `/app/api/projects`. */
 export function apiUrl(path: `/${string}`): string {
   return `${basePath}/api${path}`
 }

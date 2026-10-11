@@ -5,12 +5,14 @@ import { connectDb, disconnectDb } from '#/db/db';
 import { env } from '#/libs/env';
 import { logger } from '#/libs/logger';
 import { servesWeb } from '#/middleware/static.middleware';
+import { announceSetupIfNeeded } from '#/modules/tenancy';
 
 import app from './app';
 
 const log = logger.server;
 
 await connectDb();
+await announceSetupIfNeeded();
 
 const server = Bun.serve({
   port: env.PORT,

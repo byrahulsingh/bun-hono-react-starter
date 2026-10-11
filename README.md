@@ -1,66 +1,135 @@
-# Bun + Hono + React starter
+# bun-hono-react-starter
 
-A monorepo for a full-stack TypeScript app that ships as **one Docker image**: a Hono API on Bun that also serves a static React client from the same origin. Everything environment-specific (domain, base path, keys) is set at runtime, so the same image runs anywhere, at `/` or under a subpath.
+A starting point for self-hosted, multi-tenant web products: Bun + Hono + Postgres on the server, React + TanStack Router + shadcn/ui in the browser. Sign-in, organizations and tenants, roles, settings and an audit log are already built and tested, so a new project starts with its first real feature.
 
-| Path | Package | What it is |
-|---|---|---|
-| `apps/api` | `@repo/api` | Bun + Hono API. Serves `/api/*` and the built `apps/client`. |
-| `apps/client` | `@repo/client` | Vite + React + TanStack Router + shadcn/ui + Tailwind v4. Built to static files. |
-| `packages/*` | `@repo/*` | Internal packages, added when needed. |
+## What is already built
 
-## What's included
+- **Setup:** the first visit creates the organization and its owner, using a one-time link from the server log.
+- **Sign-in:** passwords (argon2), password reset, change of sign-in email confirmed by link, alerts for sign-ins from a new device, and rate limits.
+- **Two-factor sign-in:** authenticator apps and recovery codes. An organization rule can require it, and admins can reset it for someone who lost their phone.
+- **Single sign-on:** OpenID Connect (Microsoft Entra, Google, Okta…), managed by owners, with a test sign-in before it goes live. It can be required for chosen email domains; owners always keep a password.
+- **No cookies:** sessions are bound to the browser. A 10-minute access token lives in memory. A refresh token lives in IndexedDB, and every refresh needs a proof signed by a non-extractable key on that device, so a copied refresh token is useless elsewhere.
+- **Organization and tenants:** one organization per install, with any number of tenants (one per client or team). The Main tenant is created at setup. Owners and admins see every tenant; everyone else sees the tenants they're invited to.
+- **People, roles and permissions:** invitations (one at a time or a pasted list), built-in roles, and a role editor for custom ones. The code checks permissions, never role names.
+- **Settings:** branding (product name, logo, accent colour, so the product can be white-labelled), the mail server (owners only, checked before saving, password encrypted), security rules, and SSO.
+- **Audit log:** append-only, filterable, written as sentences.
+- **Email:** an outbox in Postgres sent by a worker, with retries. In development, Mailpit catches everything.
+- **An example module, "Projects":** one small feature built the way every feature should be. See [The example module](#the-example-module).
+- **Tests:** API tests against a real Postgres, and Playwright browser tests against a stack of their own, including real SSO redirects through Dex.
 
-**API (`apps/api`)**
-- `libs/env.ts` — the only module that reads `process.env`; validated with Zod, fails fast at boot.
-- `libs/logger.ts` — pino with typed subsystem loggers (`logger.auth.info(...)`), pretty in dev, JSON in production, secrets redacted.
-- `libs/api-response.ts` — one response envelope: `{ success, message, data?, error?: { code, details? } }`.
-- `libs/errors.ts` — `ERROR_CODES` (one list, each code tied to its HTTP status) and `throw new AppError('NOT_FOUND', '…')`.
-- `middleware/validate.middleware.ts` — `validate('json' | 'query' | …, zodSchema)`; failures become 422 with `{ field: message }`.
-- Request IDs, structured request logs, CORS off by default, graceful shutdown, `/healthz`.
-- Drizzle ORM 1.0 on Bun's built-in Postgres client: connection pool, UUIDv7 ids, snake_case columns, timestamps helper, migrator with an advisory lock.
+## Start a project
 
-**Client (`apps/client`)**
-- `lib/api/api.ts` — the only file that calls `fetch`: base-path URLs, envelope unwrapping, one `ApiError` type with stable codes, timeouts, 401 handling with a single shared refresh, `fieldErrors()` for forms.
-- `lib/api/<feature>.ts` — one file per feature describing its endpoints (see `health.ts`).
-- `lib/app-config.ts` — runtime config injected by the API (base path).
-
-**Conventions**
-- `#/*` import alias in both apps (tsconfig `paths`).
-- The client and the API share **no code or types**, only the HTTP contract. Types that cross it (the envelope, error codes) are kept in sync by hand.
-- The brand lives in runtime config, never in code; package names use the neutral `@repo/*` scope.
-
-## After creating a project from this template
-
-1. Rename the root `package.json` `name`, and the `<title>` in `apps/client/index.html`.
-2. `cp apps/api/.env.example apps/api/.env`.
-3. Replace the sample `users` table in `apps/api/src/db/schema/` with your own, then `bun run db:generate`.
-4. Add your subsystems to `SUBSYSTEMS` in `apps/api/src/libs/logger.ts` and feature error codes to `ERROR_CODES` (mirror them in `apps/client/src/lib/api/api.ts`).
-5. Replace the starter page in `apps/client/src/routes/index.tsx`.
-
-## Local development
-
-Requires Bun and Docker.
+You need Bun and Docker.
 
 ```bash
 bun install
-cp apps/api/.env.example apps/api/.env   # defaults point at the local database below
-bun run db:up                            # Postgres 17 in Docker, port 5432 (POSTGRES_PORT to change)
-bun run db:migrate                       # apply migrations
-bun run dev                              # api on :4000, client on :3000 (proxies /api to the api)
+bun run db:up      # Postgres 17 (5432), Mailpit (inbox http://localhost:8025) and Dex (5556) in Docker
+bun run init       # writes apps/api/.env and .env.test with new secrets, creates the test database, migrates
+bun run dev        # API on :4000, client on :3000 (it proxies /api to the API)
 ```
+
+Then open the setup link printed in the API log, and create your organization.
+
+`bun run init` never overwrites anything, so it is safe to run again. The secrets it generates are written to the env files only; it never prints them. Back up `APP_SECRET` with the database: settings encrypted with it can't be read without it.
+
+When you start a product from this template:
+
+- Name it in **Settings → Branding** (the default name is "App"). The product's name lives in data, not in code: packages use the neutral `@repo/*` scope.
+- Copy the example module for your first feature, or remove it (both are described below).
+- Put your product's own onboarding steps next to the existing ones in `apps/api/src/modules/settings/organization.service.ts`.
+
+## Layout
+
+| Path | Package | What it is |
+|---|---|---|
+| `apps/api` | `@repo/api` | Bun + Hono. Serves the API under `/api` and the built client. Also contains the worker (`src/worker.ts`) that sends email and does cleanup. |
+| `apps/client` | `@repo/client` | React single-page app, built to static files and served by the API. |
+| `apps/e2e` | `@repo/e2e` | Playwright browser tests. Black-box: they import nothing from the apps. |
+| `dev/dex` | | Configuration for the local SSO provider. |
+
+Inside the API:
+
+| Path | What it holds |
+|---|---|
+| `src/db/schema/` | Every table, one folder per Postgres schema: `iam` (accounts and sessions) and `public` (everything else). |
+| `drizzle/` | Migrations, generated by drizzle-kit from the schema. |
+| `src/modules/iam/` | Auth, self-contained: it knows nothing about tenants. The organization's rules reach it through hooks (`requireTwoFactorWhen`, `configureSso`). |
+| `src/modules/tenancy/` | The organization, tenants, people, invitations, roles, permissions (`tenancy.catalog.ts`) and reading the audit log. |
+| `src/modules/settings/`, `branding/`, `notifications/`, `providers/` | Settings pages, branding, the email outbox, and the email transport. |
+| `src/modules/projects/` | The example module. |
+
+## How the code is written
+
+These rules hold everywhere. Following them keeps new code consistent with what's here.
+
+- **The client and the API share only HTTP.** There is no shared package and no RPC client; the client's types are written by hand in `apps/client/src/lib/api/*.ts`.
+- **Names are snake_case end to end.** Column names are the JSON field names, with no mapping layer.
+- **All tables live in `src/db/schema`.** Each table is written by one module.
+- **Migrations are generated, never hand-written.** Change the schema, run `bun run db:generate`, and commit what it writes. Grants, lookup rows and permissions are synced from code by the migrate step (`src/db/access.ts`, `src/db/catalog.ts`), so they need no migrations either.
+- **Permissions are defined in code** (`tenancy.catalog.ts`) and checked by routes with `requirePermission('…')`. The client hides what you can't do; the API refuses it regardless.
+- **Tenant data is always scoped by the tenant id from the URL** (`/t/:tenantId/...`), never by one from the request body. Another tenant's row answers 404.
+- **Every change is audited** with `recordAudit(tx, …)` in the same transaction as the change. Secrets never go in an audit row.
+- **The browser stores nothing in cookies.** The client keeps data in IndexedDB only.
+- **Imports use the `#/` alias** (`#/db/schema`, `#/lib/api/projects`), set in each app's tsconfig.
+
+## The example module
+
+"Projects" belongs to a tenant: a list with create, edit (name, description, status) and delete, permission checks, and audit entries. These are its parts:
+
+| Part | File |
+|---|---|
+| Table and status lookup | `apps/api/src/db/schema/public/projects.sql.ts` (exported from `public/index.ts`) |
+| Status values | `apps/api/src/modules/projects/projects.catalog.ts`, synced in `src/db/catalog.ts` |
+| Permissions and the module's row in the role editor | `projects` entries in `MODULES`, `PERMISSIONS` and the built-in roles in `apps/api/src/modules/tenancy/tenancy.catalog.ts` |
+| Validation, logic, routes | `apps/api/src/modules/projects/` (mounted in `src/routes/index.ts`) |
+| Tests | `apps/api/test/projects.test.ts`, `apps/e2e/tests/projects.spec.ts` |
+| Client API and types | `apps/client/src/lib/api/projects.ts` |
+| Page and dialog | `apps/client/src/routes/_app/t/$tenantId/projects.tsx`, `apps/client/src/components/projects/` |
+| Sidebar entry | `NAV` in `apps/client/src/components/app-sidebar.tsx`, plus its path in `nav-main.tsx` |
+| Audit sentences | `project.*` in `apps/client/src/lib/audit-format.ts` |
+
+**To build a feature:** copy each part, rename it, and change the fields. Then run `bun run db:generate` for the migration. `bun run dev` regenerates the route tree when you add a page.
+
+**To remove it:** delete the files above, take out the lines that mention projects in the other files, then run `bun run db:generate`, which writes a migration that drops the tables. The API tests use `projects.*` permissions as examples of tenant permissions, so swap in one of your own there. Also replace `projects.view` in the Viewer role, and the module's row in `roles.test.ts`.
+
+## Commands
 
 | Command | Does |
 |---|---|
-| `bun run db:up` / `db:down` | Start / stop local Postgres (data survives in a Docker volume) |
-| `bun run db:generate` | Create a migration from schema changes in `apps/api/src/db/schema` |
-| `bun run db:migrate` | Apply pending migrations |
-| `bun run db:studio` | Browse the database |
-| `bun run typecheck` | Type-check every app |
-| `docker compose down -v` | Delete the local database completely |
+| `bun run init` | First-time setup on a fresh clone (above). |
+| `bun run dev` | API and worker on :4000, client on :3000. |
+| `bun run db:up` / `db:down` | Start / stop Postgres (its data survives in a Docker volume), Mailpit and Dex. |
+| `bun run db:generate` | Create a migration from schema changes. |
+| `bun run db:migrate` | Apply pending migrations. |
+| `bun run db:studio` | Browse the database. |
+| `bun run typecheck` | Type-check every app. |
+| `bun run test` | API tests, against the `app_test` database (they wipe it). |
+| `bun run test:e2e` | Browser tests (below). |
+| `docker compose down -v` | Delete the local database completely. |
+
+Local single sign-on: Dex's users and client are in `dev/dex/config.yaml`. In **Settings → Single sign-on**, use issuer `http://localhost:5556/dex` with the client ID and secret from that file.
+
+## Browser tests
+
+```bash
+bun run db:up        # Postgres, Mailpit and Dex must be running
+bun run test:e2e     # or, in apps/e2e: bunx playwright test --ui
+```
+
+Each run starts its own stack next to your dev servers, so both can run at once:
+
+| | |
+|---|---|
+| `:4100` | API and worker, on a fresh `app_e2e` database (reset every run; any database not named `*_e2e` is refused) |
+| `:3100` | the client through Vite, proxying `/api` to `:4100` |
+| Mailpit | where test emails land; tests find them by recipient |
+| Dex | the SSO provider `sso.spec.ts` signs in through, with real redirects |
+
+`onboarding.spec.ts` runs first: it sets up the install (owner `owner@acme.test`) and checks the brand-new experience. Every other spec then works in that install with its own people and tenants, named per run. A failed test leaves a trace: `cd apps/e2e && bun run report`.
 
 ## Production image
 
-One image for every deployment: the API serves the built client from the same origin. Nothing environment-specific is baked in; configure it with environment variables (see `apps/api/.env.example`).
+One image for every deployment: the API serves the built client from the same origin. Nothing environment-specific is baked in; it's configured with environment variables (documented in `apps/api/.env.example`).
 
 ```bash
 bun run docker:build     # docker build -t app:local .
@@ -68,13 +137,14 @@ bun run docker:up        # run it locally: Postgres -> migrate (one-off) -> app 
 bun run docker:down
 ```
 
-Deploy order: run migrations once with the same image, then start or roll the app containers.
+Deploy order: run migrations once with the same image, then start or roll the app and worker containers.
 
 ```bash
-docker run --rm -w /app/apps/api -e DATABASE_URL=... -e APP_URL=... <image> bun src/db/migrate.ts
-docker run -p 4000:4000 -e DATABASE_URL=... -e APP_URL=https://app.example.com <image>
+docker run --rm -w /app/apps/api -e DATABASE_URL=... -e APP_URL=... -e APP_SECRET=... <image> bun src/db/migrate.ts
+docker run -p 4000:4000 -e DATABASE_URL=... -e APP_URL=https://app.example.com -e APP_SECRET=... -e CLIENT_IP_SOURCE=... <image>
+docker run -w /app/apps/api -e DATABASE_URL=... -e APP_URL=... -e APP_SECRET=... <image> bun src/worker.ts   # sends email, cleans up
 ```
 
 - Health: `GET /healthz` (container probe, always at the root) and `GET <base>/api/health` (public).
 - Subpath installs: set `APP_URL=https://example.com/app`; the proxy must forward the full path without stripping the prefix.
-- Runs as the non-root `bun` user; stops cleanly on SIGTERM.
+- Runs as the non-root `bun` user and stops cleanly on SIGTERM.

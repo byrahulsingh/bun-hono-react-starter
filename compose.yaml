@@ -1,6 +1,6 @@
 # Local development.
 #
-#   bun run db:up        Postgres only; run the api and client on your machine with `bun run dev`
+#   bun run db:up        Postgres, Mailpit and Dex; run the api and client on your machine with `bun run dev`
 #   bun run docker:up    the production image too (migrate, then app on :4000) — to check it before shipping
 #
 # Not a production deployment: the credentials below are for your laptop only.
@@ -9,6 +9,14 @@ x-app-env: &app-env
   NODE_ENV: production
   DATABASE_URL: postgres://postgres:postgres@postgres:5432/app
   APP_URL: http://localhost:4000
+  # Local only. A real install generates its own (openssl rand -base64 48) and keeps it secret.
+  APP_SECRET: ${APP_SECRET:-local-compose-secret-change-me-0123456789abcdef}
+  # Browsers reach this container directly here; behind a reverse proxy use its header (x-forwarded-for).
+  CLIENT_IP_SOURCE: socket
+  # Emails go to Mailpit (inbox at http://localhost:8025), never to real people.
+  SMTP_HOST: mailpit
+  SMTP_PORT: 1025
+  MAIL_FROM: App <no-reply@example.com>
   LOG_LEVEL: info
 
 x-app-image: &app-image
@@ -35,6 +43,28 @@ services:
       timeout: 3s
       retries: 20
 
+  # Catches every email sent locally. Inbox: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - '${MAILPIT_SMTP_PORT:-1025}:1025'
+      - '${MAILPIT_WEB_PORT:-8025}:8025'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # A real OpenID Connect provider, for trying single sign-on locally and for
+  # the browser tests. Users and the client are in dev/dex/config.yaml.
+  dex:
+    image: ghcr.io/dexidp/dex:v2.41.1
+    command: ['dex', 'serve', '/etc/dex/config.yaml']
+    volumes:
+      - ./dev/dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - '${DEX_PORT:-5556}:5556'
+
   # One-off: applies migrations, then exits. The app waits for it to succeed,
   # the same order a production rollout uses.
   migrate:
@@ -56,6 +86,21 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+
+  # Same image, other command: background work (sending emails from the outbox).
+  worker:
+    <<: *app-image
+    profiles: [app]
+    command: ['bun', 'src/worker.ts']
+    environment: *app-env
+    # The image's health check calls the HTTP server, which the worker does not run.
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
 
 volumes:
   postgres-data:

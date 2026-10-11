@@ -19,6 +19,8 @@ import path from 'node:path';
 import type { Context, MiddlewareHandler } from 'hono';
 
 import { env } from '#/libs/env';
+import type { Branding } from '#/modules/branding';
+import { getBranding } from '#/modules/branding';
 
 const root = env.WEB_DIST ? path.resolve(env.WEB_DIST) : undefined;
 const base = env.BASE_PATH;
@@ -28,10 +30,12 @@ export const servesWeb = root !== undefined;
 /**
  * What the client reads from `window.__APP_CONFIG__`. Keep it to values that
  * are safe to show anyone who opens the page: it is readable in page source.
- * Add other public per-deployment settings here (e.g. product name, logo).
+ * Branding is here so the first paint already has the right name and colour
+ * (the same as GET /api/branding, which development uses instead).
  */
 export interface ClientConfig {
   basePath: string;
+  branding: Omit<Branding, 'customized'>;
 }
 
 /** The request path relative to the base path, or null when outside it. */
@@ -84,42 +88,80 @@ export const webAssets: MiddlewareHandler = async (c, next) => {
   });
 };
 
+const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
 /**
  * `./x` -> `${base}/x` in src/href attributes, plus the runtime config before
  * `</head>`. The config is JSON inside a <script>, so `<` is escaped: a value
  * containing `</script>` must not be able to close the tag.
  */
-function renderIndex(html: string): string {
-  const config: ClientConfig = { basePath: base };
+function renderIndex(html: string, brand: Branding): { html: string; csp: string } {
+  const { customized: _, ...branding } = brand;
+  const config: ClientConfig = { basePath: base, branding };
   const json = JSON.stringify(config).replace(/</g, '\\u003c');
+  const inline = `window.__APP_CONFIG__=${json}`;
 
-  return html
-    .replace(/\b(src|href)="\.\//g, `$1="${base}/`)
-    .replace('</head>', `<script>window.__APP_CONFIG__=${json}</script></head>`);
+  return {
+    html: html
+      .replace(/<title>[^<]*<\/title>/, `<title>${escapeHtml(brand.product_name)}</title>`)
+      .replace(/\b(src|href)="\.\//g, `$1="${base}/`)
+      .replace('</head>', `<script>${inline}</script></head>`),
+    csp: contentSecurityPolicy(inline),
+  };
 }
 
-// The build does not change while the process runs, so render it once.
-let indexHtml: Promise<string | null> | undefined;
+/**
+ * The page may only run our own scripts: the bundle from this origin, plus the
+ * one inline config script, allowed by its exact hash. An injected <script>
+ * (the usual XSS) does not run, so it cannot use the session's device key.
+ * Styles allow inline attributes, which the UI components set.
+ */
+function contentSecurityPolicy(inlineScript: string): string {
+  const hash = new Bun.CryptoHasher('sha256').update(inlineScript).digest('base64');
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'sha256-${hash}'`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "media-src 'self' blob:",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join('; ');
+}
 
-function loadIndex(): Promise<string | null> {
-  indexHtml ??= (async () => {
+// The build does not change while the process runs, so read it once; render
+// it again only when the branding changes (its version is in the config).
+let indexFile: Promise<string | null> | undefined;
+let rendered: { version: string; page: { html: string; csp: string } | null } | undefined;
+
+async function loadIndex(): Promise<{ html: string; csp: string } | null> {
+  indexFile ??= (async () => {
     const file = Bun.file(path.join(root!, 'index.html'));
-    return (await file.exists()) ? renderIndex(await file.text()) : null;
+    return (await file.exists()) ? file.text() : null;
   })();
-  return indexHtml;
+  const [html, brand] = await Promise.all([indexFile, getBranding()]);
+  if (rendered?.version !== brand.version) {
+    rendered = { version: brand.version, page: html === null ? null : renderIndex(html, brand) };
+  }
+  return rendered.page;
 }
 
 /**
  * The client's `index.html` for a browser asking for a page (a client-side
- * route such as /app/orders/123), or null so the caller can send a JSON 404.
+ * route such as /app/projects/123), or null so the caller can send a JSON 404.
  * `no-cache`, so a deploy is picked up on the next load.
  */
 export async function webIndex(c: Context): Promise<Response | null> {
   if (!root || pagePath(c) === null) return null;
   if (!c.req.header('Accept')?.includes('text/html')) return null;
 
-  const html = await loadIndex();
-  if (html === null) return null;
+  const page = await loadIndex();
+  if (page === null) return null;
 
-  return c.html(html, 200, { 'Cache-Control': 'no-cache' });
+  return c.html(page.html, 200, { 'Cache-Control': 'no-cache', 'Content-Security-Policy': page.csp });
 }

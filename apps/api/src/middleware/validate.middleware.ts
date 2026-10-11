@@ -2,10 +2,10 @@
  * Request validation. Every route that reads input declares it with a Zod
  * schema, and the handler only ever sees parsed, typed values:
  *
- *   const createJob = z.object({ title: z.string().min(3) });
+ *   const createProject = z.object({ name: z.string().min(1) });
  *
- *   jobs.post('/', validate('json', createJob), (c) => {
- *     const { title } = c.req.valid('json'); // typed, already checked
+ *   projects.post('/', validate('json', createProject), (c) => {
+ *     const { name } = c.req.valid('json'); // typed, already checked
  *   });
  *
  * Targets: 'json' (body), 'query', 'param', 'header', 'cookie', 'form'.

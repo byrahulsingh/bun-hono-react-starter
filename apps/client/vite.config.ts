@@ -14,7 +14,10 @@ const config = defineConfig({
   base: './',
   resolve: { tsconfigPaths: true },
   plugins: [
-    devtools(),
+    // Console piping keeps one connection open per tab. Browsers allow six
+    // per host, so with a handful of tabs open the next page's modules queue
+    // behind them and it hangs on "Loading…".
+    devtools({ consolePiping: { enabled: false } }),
     tailwindcss(),
     tanstackRouter({ target: 'react', autoCodeSplitting: true }),
     viteReact(),

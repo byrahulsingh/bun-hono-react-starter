@@ -6,11 +6,14 @@
     "packages/*"
   ],
   "scripts": {
+    "init": "bun apps/api/scripts/init.ts",
     "dev": "bun --filter '*' dev",
     "build": "bun --filter '*' build",
     "typecheck": "bun --filter '*' typecheck",
-    "db:up": "docker compose up -d --wait postgres",
-    "db:down": "docker compose stop postgres",
+    "test": "bun run --filter @repo/api test",
+    "test:e2e": "bun run --filter @repo/e2e test",
+    "db:up": "docker compose up -d --wait postgres mailpit dex",
+    "db:down": "docker compose stop postgres mailpit dex",
     "db:generate": "bun run --filter @repo/api db:generate",
     "db:migrate": "bun run --filter @repo/api db:migrate",
     "db:studio": "bun run --filter @repo/api db:studio",

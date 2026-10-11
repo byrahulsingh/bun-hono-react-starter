@@ -37,8 +37,8 @@ const envSchema = z.object({
    * The public address of the product, INCLUDING any subpath the host mounts it
    * under: `https://app.example.com` or `https://example.com/app`.
    *
-   * The single source of truth for where we live. Every absolute link we send
-   * out (emails, messages, OAuth callbacks) is built from it — never from the
+   * The single source of truth for where we live. Every link we send out
+   * (invitations, password resets, any email) is built from it — never from the
    * request's Host header, which a caller can forge. BASE_PATH is derived from
    * it below and is never set separately, so the two cannot disagree. The API
    * is always `${BASE_PATH}/api` on the same host, so there is no API_URL.
@@ -69,6 +69,56 @@ const envSchema = z.object({
     ),
 
   /**
+   * The one root secret of an install, 32+ random characters
+   * (`openssl rand -base64 48`). Never used directly: libs/crypto.ts derives a
+   * separate key from it for each purpose (encrypting secrets at rest, hashing
+   * one-time tokens). Changing it makes every encrypted value unreadable, so
+   * it is generated once at install time and backed up with the database.
+   */
+  APP_SECRET: z.string().min(32, 'APP_SECRET must be at least 32 characters — generate one with `openssl rand -base64 48`'),
+
+  /**
+   * Where the caller's IP address comes from, for rate limits and audit rows.
+   * `socket` when browsers connect to this server directly; otherwise the
+   * header the client's reverse proxy sets, e.g. `x-forwarded-for` or
+   * `x-real-ip`. A header is only trustworthy if the proxy overwrites it, which
+   * is why there is no guessing: production refuses to start without it.
+   */
+  CLIENT_IP_SOURCE: z
+    .string()
+    .transform((s) => s.trim().toLowerCase())
+    .optional(),
+
+  /**
+   * Optional fixed token for the first-owner setup page, for installs that
+   * cannot read the server log (where a one-time link is printed otherwise).
+   * Single use either way: once setup is done the page is gone.
+   */
+  SETUP_TOKEN: z.string().min(24, 'SETUP_TOKEN must be at least 24 characters').optional(),
+
+  /**
+   * Outgoing email (SMTP works with Gmail, Amazon SES, SendGrid, Microsoft 365,
+   * Google Workspace). Optional: owners can set the mail server in Settings →
+   * Email instead; these win when set. Neither, in development: Mailpit from
+   * compose.yaml catches everything at http://localhost:8025. Neither, in
+   * production: emails wait and fail visibly in Settings → Email.
+   */
+  SMTP_HOST: z.string().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().optional(),
+  /** `true` for port 465 (TLS from the start); `false` for 587 (STARTTLS) and Mailpit. */
+  SMTP_SECURE: z
+    .enum(['true', 'false'])
+    .transform((v) => v === 'true')
+    .optional(),
+  SMTP_USER: z.string().min(1).optional(),
+  SMTP_PASSWORD: z.string().min(1).optional(),
+  /**
+   * An address the SMTP account may send as. Bare, emails show the branded
+   * product name as the sender; `Name <address>` fixes the name instead.
+   */
+  MAIL_FROM: z.string().min(3).optional(),
+
+  /**
    * Absolute path to the built client (`apps/client/dist`).
    *
    * Set by the Docker image; left unset in development, where vite serves the
@@ -86,12 +136,21 @@ const raw = Object.fromEntries(Object.entries(process.env).filter(([, value]) =>
 
 const parsed = envSchema
   .superRefine((value, ctx) => {
-    // A default here would send users links to localhost.
+    // A default here would send people links to localhost.
     if (value.NODE_ENV === 'production' && value.APP_URL === undefined) {
       ctx.addIssue({
         code: 'custom',
         path: ['APP_URL'],
         message: 'APP_URL is required in production, e.g. https://app.example.com or https://example.com/app',
+      });
+    }
+    // Guessing would either trust a header any caller can forge, or rate-limit
+    // every user behind the proxy as one IP.
+    if (value.NODE_ENV === 'production' && value.CLIENT_IP_SOURCE === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CLIENT_IP_SOURCE'],
+        message: 'CLIENT_IP_SOURCE is required in production: `socket`, or the header your reverse proxy sets (e.g. x-forwarded-for)',
       });
     }
   })
@@ -118,6 +177,7 @@ export const env = {
    * public route — client pages, assets, `/api` — lives under it.
    */
   BASE_PATH: appUrl.pathname.replace(/\/+$/, ''),
+  CLIENT_IP_SOURCE: parsed.data.CLIENT_IP_SOURCE ?? 'socket',
 };
 
 export const isDev = env.NODE_ENV === 'development';

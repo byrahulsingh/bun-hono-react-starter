@@ -17,6 +17,10 @@
 **/*.key
 **/*.crt
 
+# Tests are not shipped.
+apps/api/test
+apps/api/bunfig.toml
+
 # Local data, logs, tooling.
 .git
 .data

@@ -1,7 +1,7 @@
 /**
  * The one place every API call goes through.
  *
- * Feature files next to this one (health.ts, auth.ts, jobs.ts, ...) describe
+ * Feature files next to this one (health.ts, auth.ts, projects.ts, ...) describe
  * endpoints; they never call `fetch` themselves. That keeps these decisions in
  * a single place:
  *
@@ -10,7 +10,10 @@
  *   here, so callers get `data` or a thrown ApiError, never a raw Response.
  * - Errors: network failures, timeouts, non-JSON replies (a proxy's HTML 502
  *   page) and API errors all become one ApiError type with a stable `code`.
- * - 401: handed to one handler (redirect to login, or refresh and retry).
+ * - 401: an expired access token is refreshed once and the request retried;
+ *   a session that has ended signs the user out (see lib/auth/session.ts).
+ * - No cookies, ever: `credentials: 'omit'`. Identity travels only in the
+ *   Authorization header.
  */
 
 import { apiUrl } from '#/lib/app-config'
@@ -45,6 +48,13 @@ type ServerErrorCode =
   | 'RATE_LIMITED'
   | 'INTERNAL'
   | 'UNAVAILABLE'
+  // Auth
+  | 'INVALID_CREDENTIALS' // wrong email or password (deliberately one code)
+  | 'SESSION_EXPIRED' // the session is over: sign in again
+  | 'INVALID_DEVICE_PROOF'
+  | 'REFRESH_TOKEN_REUSED'
+  | 'LINK_INVALID' // a setup / reset / invitation link that is wrong, used or expired
+  | 'SSO_REQUIRED' // a password where the organization requires single sign-on
 
 /** Codes only the client produces: the request never got a usable reply. */
 type ClientErrorCode =
@@ -104,14 +114,16 @@ function codeForStatus(status: number): ApiErrorCode {
 }
 
 interface ApiHooks {
-  /** Extra headers for every request (e.g. Authorization, if we use tokens). */
+  /** Headers for authenticated requests (the Authorization header). */
   headers?: () => Record<string, string> | undefined
   /**
-   * Called once for a 401. Resolve `true` after fixing the session (e.g. a
-   * token refresh) to retry the request once; `false` to give up (e.g. after
-   * redirecting to login). Concurrent 401s share one call.
+   * The access token was refused (401 UNAUTHORIZED: expired or unknown).
+   * Resolve `true` after refreshing it to retry the request once; `false` to
+   * give up. Concurrent 401s share one call.
    */
   onUnauthorized?: () => Promise<boolean>
+  /** The session itself is over (401 SESSION_EXPIRED): sign out, no retry. */
+  onSessionEnded?: () => void
 }
 
 let hooks: ApiHooks = {}
@@ -138,6 +150,12 @@ function handleUnauthorized(): Promise<boolean> {
 type Query = Record<string, string | number | boolean | null | undefined>
 
 export interface RequestOptions {
+  /**
+   * `false` for the public auth endpoints (login, refresh, setup, links): no
+   * Authorization header, and a 401 is just an error — never a refresh, which
+   * would loop or hide a wrong password. Default `true`.
+   */
+  auth?: boolean
   query?: Query
   body?: unknown
   headers?: Record<string, string>
@@ -166,7 +184,14 @@ async function request<T>(
   options: RequestOptions = {},
   isRetry = false,
 ): Promise<T> {
-  const { query, body, headers, signal, timeout = DEFAULT_TIMEOUT } = options
+  const {
+    auth = true,
+    query,
+    body,
+    headers,
+    signal,
+    timeout = DEFAULT_TIMEOUT,
+  } = options
   const isForm = body instanceof FormData
 
   const timeoutSignal = AbortSignal.timeout(timeout)
@@ -174,15 +199,16 @@ async function request<T>(
   try {
     res = await fetch(buildUrl(path, query), {
       method,
-      // Same origin: the session cookie is sent without this, but being
-      // explicit documents that we rely on it.
-      credentials: 'same-origin',
+      // We use no cookies, so never send or accept any.
+      credentials: 'omit',
+      // Answers carry tokens and personal data: never from or into a cache.
+      cache: 'no-store',
       headers: {
         Accept: 'application/json',
         // FormData (file uploads) sets its own multipart boundary header.
         ...(body !== undefined &&
           !isForm && { 'Content-Type': 'application/json' }),
-        ...hooks.headers?.(),
+        ...(auth && hooks.headers?.()),
         ...headers,
       },
       body:
@@ -208,10 +234,6 @@ async function request<T>(
 
   const requestId = res.headers.get('X-Request-Id') ?? undefined
 
-  if (res.status === 401 && !isRetry && (await handleUnauthorized())) {
-    return request<T>(method, path, options, true)
-  }
-
   if (res.status === 204) return undefined as T
 
   let envelope: ApiResponse<T>
@@ -228,11 +250,21 @@ async function request<T>(
   }
 
   if (!res.ok || !envelope.success) {
+    const code =
+      (envelope.error?.code as ServerErrorCode | undefined) ??
+      codeForStatus(res.status)
+
+    if (auth && res.status === 401) {
+      if (code === 'UNAUTHORIZED' && !isRetry && (await handleUnauthorized())) {
+        return request<T>(method, path, options, true)
+      }
+      if (code === 'SESSION_EXPIRED') hooks.onSessionEnded?.()
+    }
+
     throw new ApiError(
       envelope.message || `Request failed (HTTP ${res.status}).`,
       res.status,
-      (envelope.error?.code as ServerErrorCode | undefined) ??
-        codeForStatus(res.status),
+      code,
       envelope.error?.details,
       requestId,
     )

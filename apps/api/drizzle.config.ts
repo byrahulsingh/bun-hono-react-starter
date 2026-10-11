@@ -8,6 +8,8 @@ export default defineConfig({
   out: './drizzle',
   schema: './src/db/schema/index.ts',
   dialect: 'postgresql',
+  // Our two schemas; drizzle-kit ignores everything else in the database.
+  schemaFilter: ['public', 'iam'],
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },

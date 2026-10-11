@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import { requestId } from 'hono/request-id';
+import { secureHeaders } from 'hono/secure-headers';
 
 import { apiResponse } from '#/libs/api-response';
 import { env } from '#/libs/env';
@@ -13,7 +14,7 @@ import type { AppEnv } from '#/types/app.types';
 
 const log = logger.http;
 
-// `strict: false` — `/api/jobs` and `/api/jobs/` both resolve. Hono's default
+// `strict: false` — `/api/projects` and `/api/projects/` both resolve. Hono's default
 // 404s the trailing slash for every method, so a POST with a stray slash fails
 // in a way that looks like a missing route rather than a typo.
 // `trimTrailingSlash()` is not an alternative: it only redirects GET and HEAD.
@@ -24,6 +25,29 @@ const app = new Hono<AppEnv>({ strict: false });
 // the load balancer survives into these logs. It also echoes the id back in the
 // response header, which is what a support ticket quotes.
 app.use('*', requestId());
+
+// Browser hardening on every response: no MIME sniffing, no framing (stops
+// clickjacking), no Referer — links carrying single-use tokens must not leak
+// the token to another site through it. The page's Content-Security-Policy is
+// added where index.html is served (static.middleware.ts).
+app.use(
+  '*',
+  secureHeaders({
+    xFrameOptions: 'DENY',
+    referrerPolicy: 'no-referrer',
+    // Nothing uses them; a feature that needs the camera allows camera: ['self'].
+    permissionsPolicy: { camera: [], microphone: [], geolocation: [] },
+    // Set below instead, so a route can choose otherwise.
+    crossOriginResourcePolicy: false,
+  }),
+);
+
+// Other sites may not embed our responses, unless a route says so (branding
+// images, which emails show).
+app.use('*', async (c, next) => {
+  await next();
+  if (!c.res.headers.has('Cross-Origin-Resource-Policy')) c.header('Cross-Origin-Resource-Policy', 'same-origin');
+});
 
 // Request logging through pino rather than hono/logger, so HTTP lines carry the
 // same structure and level as everything else.
@@ -88,6 +112,13 @@ if (env.CORS_ORIGINS.length > 0) {
 }
 
 const api = site.basePath('/api');
+
+// API answers carry tokens and personal data: no browser or proxy may keep a
+// copy. A route serving something public and fixed (a logo) sets its own.
+api.use('*', async (c, next) => {
+  await next();
+  if (!c.res.headers.has('Cache-Control')) c.header('Cache-Control', 'no-store');
+});
 
 // Every group hangs off `src/routes/index.ts`, which is the only place a URL is
 // named. `${BASE_PATH}/api` is prefixed once, here.

@@ -4,18 +4,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --watch src/index.ts & bun --watch src/worker.ts & wait",
+    "worker": "bun src/worker.ts",
     "db:generate": "bunx --bun drizzle-kit generate",
     "db:migrate": "bun run src/db/migrate.ts",
     "db:check": "bunx --bun drizzle-kit check",
     "db:studio": "bunx --bun drizzle-kit studio",
     "start": "bun src/index.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hono/zod-validator": "^0.9.1",
     "drizzle-orm": "^1.0.0-rc.4",
     "hono": "^4.13.9",
+    "jose": "^6.2.12",
+    "nodemailer": "^10.0.13",
     "pino": "^10.3.1",
     "zod": "^4.6.5"
   },
