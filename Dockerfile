@@ -13,7 +13,7 @@
 # One image for every deployment: nothing environment-specific (domain, base
 # path, keys) is baked in. All of it comes from environment variables at start.
 
-ARG BUN_VERSION=1.4.2
+ARG BUN_VERSION=1.4.4
 
 # ─── All dependencies, to build the client ───────────────────────
 FROM oven/bun:${BUN_VERSION} AS deps
@@ -29,7 +29,8 @@ RUN bun install --frozen-lockfile
 FROM deps AS client
 COPY tsconfig.base.json ./
 COPY apps/client apps/client
-RUN bun run --filter @repo/client build
+# `--bun`: Bun runs Vite itself, even though Vite's launcher asks for Node.
+RUN bun --bun run --filter @repo/client build
 
 # ─── API production dependencies only ────────────────────────────
 FROM oven/bun:${BUN_VERSION} AS api-deps

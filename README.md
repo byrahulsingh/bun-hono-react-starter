@@ -23,7 +23,7 @@ You need Bun and Docker.
 
 ```bash
 bun install
-bun run db:up      # Postgres 17 (5432), Mailpit (inbox http://localhost:8025) and Dex (5556) in Docker
+bun run db:up      # Postgres 18 (5432), Mailpit (inbox http://localhost:8025) and Dex (5556) in Docker
 bun run init       # writes apps/api/.env and .env.test with new secrets, creates the test database, migrates
 bun run dev        # API on :4000, client on :3000 (it proxies /api to the API)
 ```
